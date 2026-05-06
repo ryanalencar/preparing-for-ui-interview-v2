@@ -18,7 +18,8 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Your Code Here _____________ */
 
-type First = {};
+type First<T extends readonly any[]> = T extends [infer First, ...any[]] ? First : never
+type Last<T extends readonly any[]> = T extends [...any[], infer Last] ? Last : never
 
 /* _____________ Test Cases _____________ */
 
@@ -27,6 +28,11 @@ type cases = [
   Expect<Equal<First<[() => 123, { a: string }]>, () => 123>>,
   Expect<Equal<First<[]>, never>>,
   Expect<Equal<First<[undefined]>, undefined>>,
+  
+  Expect<Equal<Last<[3, 2, 1]>, 1>>,
+  Expect<Equal<Last<[() => 123, { a: string }]>, { a: string }>>,
+  Expect<Equal<Last<[]>, never>>,
+  Expect<Equal<Last<[undefined]>, undefined>>,
 ]
 
 type errors = [
