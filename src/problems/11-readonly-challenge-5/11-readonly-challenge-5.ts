@@ -21,6 +21,10 @@ import type { Equal, Expect } from '@course/types'
 
 /* _____________ Test Cases _____________ */
 
+type MyReadonly<T> = {
+  readonly [P in keyof T]: T[P]
+}
+
 interface Todo {
   title: string
   description: string
