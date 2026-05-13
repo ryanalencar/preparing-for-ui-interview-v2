@@ -16,6 +16,24 @@ class TreeNode {
     public parent: TreeNode | null = null,
   ) {}
 
+  addChild(node: TreeNode) {
+    node.parent = this
+    this.children.push(node)
+  }
+
+  updateStatus() {
+    const noneSelect = this.children.filter((node) => node.status !== NOT_SELECTED)
+    const allSelect = this.children.every((node) => node.status === SELECTED)
+
+    if (noneSelect) {
+      this.status = NOT_SELECTED
+    } else if (allSelect) {
+      this.status = SELECTED
+    } else {
+      this.status = PARTIAL
+    }
+  }
+
   toString(level: number = -1): string {
     const dots = Math.max(0, level)
     const root = level === -1 ? '' : `${'.'.repeat(dots)}[${this.status}]${this.name}\n`
@@ -24,7 +42,28 @@ class TreeNode {
 }
 
 // Step 1: Implement createTree
-function createTree(paths: string[]): [TreeNode, Map<string, TreeNode>] {}
+function createTree(paths: string[]): [TreeNode, Map<string, TreeNode>] {
+  const root = new TreeNode('root', null)
+  const store = new Map<string, TreeNode>()
+
+  let current = root
+
+  for (const path of paths) {
+    current = root
+    for (const token of path.split('/')) {
+      const node = store.get(token) ?? new TreeNode(token, current)
+
+      if (!store.has(token)) {
+        store.set(token, node)
+        current.addChild(node)
+      }
+
+      current = node
+    }
+  }
+
+  return [root, store]
+}
 //   - Create a root TreeNode and a Map<string, TreeNode> store
 //   - For each path, split by '/' into tokens
 //   - For each token, check if it exists in the store; if not, create a new TreeNode and addChild to parent
@@ -45,8 +84,8 @@ export const renderTreeSelect = (paths: string[], clicks: string[]): string => {
 // --- Examples ---
 // Uncomment to test your implementation:
 // Example 1: Basic tree rendering (no clicks)
-// const paths1 = ['fruits/apple', 'fruits/banana', 'vegetables/carrot']
-// console.log(renderTreeSelect(paths1, []))
+const paths1 = ['fruits/apple', 'fruits/banana', 'vegetables/carrot']
+console.log(renderTreeSelect(paths1, []))
 // Expected output:
 // [ ]fruits
 // .[ ]apple
