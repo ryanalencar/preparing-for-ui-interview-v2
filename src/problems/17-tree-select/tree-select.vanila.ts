@@ -21,14 +21,18 @@ class TreeNode {
     this.children.push(node)
   }
 
-  updateStatus() {
-    const noneSelect = this.children.filter((node) => node.status !== NOT_SELECTED)
-    const allSelect = this.children.every((node) => node.status === SELECTED)
+  getSelectedCount(): number {
+    return this.children.reduce((acc, node) => acc + (node.status === SELECTED ? 1 : 0), 0)
+  }
 
-    if (noneSelect) {
-      this.status = NOT_SELECTED
-    } else if (allSelect) {
+  updateStatus() {
+    const selectedCount = this.getSelectedCount()
+    const hasPartialChild = this.children.some((c) => c.status === PARTIAL)
+
+    if (selectedCount === this.children.length && !hasPartialChild) {
       this.status = SELECTED
+    } else if (selectedCount === 0 && !hasPartialChild) {
+      this.status = NOT_SELECTED
     } else {
       this.status = PARTIAL
     }
@@ -70,22 +74,49 @@ function createTree(paths: string[]): [TreeNode, Map<string, TreeNode>] {
 //   - Return [root, store]
 
 // Step 2: Implement bubble
-function* bubble(node: TreeNode): Iterable<TreeNode> {}
+function* bubble(node: TreeNode): Iterable<TreeNode> {
+  if (node.parent) {
+    yield node.parent
+    yield* bubble(node.parent)
+  }
+}
 
 // Step 3: Implement propagate
-function* propagate(node: TreeNode): Iterable<TreeNode> {}
+function* propagate(node: TreeNode): Iterable<TreeNode> {
+  for (const child of node.children) {
+    yield child
+    yield* propagate(child)
+  }
+}
 // Step 4: Implement renderTreeSelect
 //   - Call createTree to build the tree
 //   - For each click: toggle the clicked node's status, propagate to descendants, bubble up to update ancestors
 //   - Return root.toString()
 
-export const renderTreeSelect = (paths: string[], clicks: string[]): string => {}
+export const renderTreeSelect = (paths: string[], clicks: string[]): string => {
+  const [root, store] = createTree(paths)
+
+  for (const click of clicks) {
+    const target = store.get(click)
+    if (target) {
+      target.status = target.status !== SELECTED ? SELECTED : NOT_SELECTED
+      for (const child of propagate(target)) {
+        child.status = target.status
+      }
+      for (const parent of bubble(target)) {
+        parent.updateStatus()
+      }
+    }
+  }
+
+  return root.toString()
+}
 
 // --- Examples ---
 // Uncomment to test your implementation:
 // Example 1: Basic tree rendering (no clicks)
-const paths1 = ['fruits/apple', 'fruits/banana', 'vegetables/carrot']
-console.log(renderTreeSelect(paths1, []))
+// const paths1 = ['fruits/apple', 'fruits/banana', 'vegetables/carrot']
+// console.log(renderTreeSelect(paths1, []))
 // Expected output:
 // [ ]fruits
 // .[ ]apple
@@ -94,7 +125,7 @@ console.log(renderTreeSelect(paths1, []))
 // .[ ]carrot
 
 // Example 2: Select a leaf node → parent becomes partial
-// console.log(renderTreeSelect(['fruits/apple', 'fruits/banana'], ['apple']))
+console.log(renderTreeSelect(['fruits/apple', 'fruits/banana'], ['apple']))
 // Expected output:
 // [o]fruits
 // .[v]apple
