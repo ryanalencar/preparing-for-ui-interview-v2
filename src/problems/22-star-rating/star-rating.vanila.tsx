@@ -1,4 +1,4 @@
-import {AbstractComponent, type TComponentConfig} from '@course/utils'
+import { AbstractComponent, type TComponentConfig } from '@course/utils'
 import css from './star-rating.module.css'
 import flex from '@course/styles'
 import cx from "@course/cx";
@@ -21,6 +21,10 @@ export class StarRating extends AbstractComponent<TStarRatingProps> {
      * - Initialize this.value from config.value
      */
     constructor(props: TComponentConfig<TStarRatingProps>) {
+        super({
+            ...props,
+            listeners: ['click']
+        })
     }
 
     /**
@@ -30,7 +34,8 @@ export class StarRating extends AbstractComponent<TStarRatingProps> {
      * - Read the star value from button.dataset.starValue (convert to Number)
      * - If valid: update this.value, call this.config.onValueChange, call this.render()
      */
-    onClick({target}: MouseEvent): void {
+    onClick({ target }: MouseEvent): void {
+        if (this.config.readOnly) return
     }
 
     /**
@@ -49,9 +54,23 @@ export class StarRating extends AbstractComponent<TStarRatingProps> {
      * - Include a hidden <input type="hidden" value="${this.value}" aria-hidden="true" />
      */
     toHTML(): string {
+        const stars = Array.from({ length: STARS_COUNT }, (_, index) => this.getStar(index + 1))
+        return `<div aria-readonly="${this.config.readOnly ?? false}"
+                     aria-label="Star rating" 
+                     role="radiogroup">
+                        ${stars}
+                </div>`
     }
 
     getStar = (value: number) => {
+        return `<button role="radio" 
+                        class="${css.star}"
+                        aria-selected="${value === this.value}" 
+                        aria-label="${value <= this.value}"
+                        data-rating="${value}" 
+                        data-checked="${value <= this.value}">
+                        ${STAR}
+                </button>`
     }
 
     /**
