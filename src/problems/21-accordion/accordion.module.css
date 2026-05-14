@@ -3,13 +3,14 @@
 /* style the clickable header
 - hide default marker with list-style: none */
 .summary {
+   list-style: none;
 }
 
 /* Hide the default disclosure triangle in WebKit browsers */
 .summary::-webkit-details-marker {
 }
 
-/* Details: style the accordion item wrapper */
+/* Details: style the accordion item wrapper */l
 .details {
 }
 
@@ -18,10 +19,16 @@
    - set max-height to 0
    - hide overflow */
 .details::details-content {
+   max-height: 0;
+   overflow-y: hidden;
+   transition: max-height 0.3s ease, content-visibility 0.3s allow-discrete;
 }
 
 /* When open, expand content */
 .details[open]::details-content {
+   max-height: 500px;
+   overflow-y: scroll;
+}
 
 /* Optional - style marker */
 /* Custom indicator (plus sign) */
