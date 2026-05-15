@@ -13,7 +13,7 @@ type TStarRatingProps = {
 }
 
 export class StarRating extends AbstractComponent<TStarRatingProps> {
-    value: number = 0
+    value: number
 
     /**
      * Step 1: Constructor
@@ -25,6 +25,7 @@ export class StarRating extends AbstractComponent<TStarRatingProps> {
             ...props,
             listeners: ['click']
         })
+        this.value = props.value ?? 0
     }
 
     /**
@@ -36,6 +37,11 @@ export class StarRating extends AbstractComponent<TStarRatingProps> {
      */
     onClick({ target }: MouseEvent): void {
         if (this.config.readOnly) return
+        if (target instanceof HTMLButtonElement && target.dataset.rating) {
+            this.value = +target.dataset.rating
+            this.config.onValueChange?.(this.value)
+            this.render()
+        }
     }
 
     /**
