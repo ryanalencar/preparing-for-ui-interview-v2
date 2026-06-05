@@ -31,6 +31,8 @@ type TSort<T> = {
   dir: TSortDir
 }
 
+const PAGE_SIZE = 5
+
 export function Table<T extends { id: string }>({
   search,
   columns,
@@ -42,15 +44,36 @@ export function Table<T extends { id: string }>({
   // - data (T[], default [])
   // - currentPage (number, default 0)
   // - sort ({ columnId, direction } | null, default null)
+  const [query, setQuery] = useState('')
+  const [data, setData] = useState<T[]>([])
+  const [sort, setSort] = useState<TSort<T> | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
 
   // Step 2: Fetch initial data
   // - useEffect on datasource change: reset data and currentPage, fetch page 0
+  useEffect(() => {
+    if (data.length >= (currentPage + 1) * PAGE_SIZE) {
+      return
+    }
+
+    let cancelled = false
+
+    datasource.next(currentPage, PAGE_SIZE).then((data) => {
+      if (!cancelled) {
+        setData(d => [...d, ...data])
+      }
+    }, (err) => { throw err })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentPage, data.length, datasource])
 
   // Step 3: Implement pagination handlers
   // - next: if not on last page, increment currentPage; if data not yet fetched, call datasource.next and append
   // - prev: decrement currentPage (min 0)
-  const next = () => {}
-  const prev = () => {}
+  const next = () => { }
+  const prev = () => { }
 
   // Step 4: Implement search handler
   const searchHandler = (data: T[], query: string): T[] => {
@@ -70,12 +93,35 @@ export function Table<T extends { id: string }>({
   // - Sort filtered data using comparator prop if sort is active
   // - Slice to current page window
 
-  const compute = (): T[] => {}
+  const compute = (): T[] => {
+    return data
+  }
+
+  const chunk = compute()
 
   // Step 7: Render
   // - <table> with <thead> (column headers with sort indicators and data-column-id)
   // - <tbody> with rows from slice, using column renderers
   // - Controls: Prev/Next buttons (disabled at boundaries), page info, search input
 
-  return <div>TODO: Implement</div>
+  const content = chunk.map(v => {
+    return <tr>
+      {columns.map(c => {
+        return <td>{c.renderer(v)}</td>
+      })}
+    </tr>
+  })
+
+  return <div>
+    <table>
+      <thead>
+        <tr>
+          {columns.map((c) => <th>{c.name}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {content}
+      </tbody>
+    </table>
+  </div>
 }
