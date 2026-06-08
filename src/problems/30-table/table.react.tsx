@@ -48,6 +48,7 @@ export function Table<T extends { id: string }>({
   const [data, setData] = useState<T[]>([])
   const [sort, setSort] = useState<TSort<T> | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Step 2: Fetch initial data
   // - useEffect on datasource change: reset data and currentPage, fetch page 0
@@ -57,12 +58,14 @@ export function Table<T extends { id: string }>({
     }
 
     let cancelled = false
-
+    setIsLoading(true)
     datasource.next(currentPage, PAGE_SIZE).then((data) => {
       if (!cancelled) {
         setData(d => [...d, ...data])
       }
-    }, (err) => { throw err })
+    }, (err) => { throw err }).finally(() => {
+      setIsLoading(false)
+    })
 
     return () => {
       cancelled = true
@@ -72,12 +75,23 @@ export function Table<T extends { id: string }>({
   // Step 3: Implement pagination handlers
   // - next: if not on last page, increment currentPage; if data not yet fetched, call datasource.next and append
   // - prev: decrement currentPage (min 0)
-  const next = () => { }
-  const prev = () => { }
+  const next = () => {
+    setCurrentPage(page => page + 1)
+  }
+  const prev = () => {
+    setCurrentPage(page => page - 1)
+  }
 
   // Step 4: Implement search handler
   const searchHandler = (data: T[], query: string): T[] => {
-    return []
+    if (!query) {
+      return data
+    }
+    if (search) {
+      return search(query, data)
+    } else {
+      return data.filter(d => d.id.includes(query))
+    }
   }
 
   // Step 5: Implement sort handler
@@ -85,7 +99,12 @@ export function Table<T extends { id: string }>({
   // - Cycle direction: none → asc → desc → none
   // - Update sort state
   const onSort: React.MouseEventHandler<HTMLElement> = ({ target }) => {
-    // todo
+    if (target instanceof HTMLElement && target.dataset.id) {
+      const id = target.dataset.id as keyof T
+      const dir = sort ? nextDir[sort.dir] : nextDir.none
+
+      setSort({ id, dir })
+    }
   }
 
   // Step 6: Compute displayed slice with useMemo
@@ -94,7 +113,9 @@ export function Table<T extends { id: string }>({
   // - Slice to current page window
 
   const compute = (): T[] => {
-    return data
+    const filtered = searchHandler(data, query)
+    const sorted = sort && sort.dir && sort.dir !== 'none' && comparator ? filtered.toSorted(comparator(sort.id, sort.dir)) : filtered
+    return sorted.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
   }
 
   const chunk = compute()
@@ -115,13 +136,19 @@ export function Table<T extends { id: string }>({
   return <div>
     <table>
       <thead>
-        <tr>
-          {columns.map((c) => <th>{c.name}</th>)}
+        <tr onClick={onSort}>
+          {columns.map((c) => <th data-id={c.id}>{c.name}</th>)}
         </tr>
       </thead>
       <tbody>
         {content}
       </tbody>
     </table>
+    <div>{isLoading ? 'Loading new data...' : ''}</div>
+    <div>
+      <button disabled={currentPage === 0} onClick={prev}>Prev</button>
+      <button disabled={currentPage === datasource.pages - 1} onClick={next}>Next</button>
+      <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} />
+    </div>
   </div>
 }
