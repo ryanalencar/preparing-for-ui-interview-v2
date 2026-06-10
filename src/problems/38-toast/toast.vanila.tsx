@@ -18,7 +18,6 @@ let toastInstanceID = 0
 export class Toast extends AbstractComponent<object> {
   id = toastInstanceID++
   listElement: HTMLUListElement | null = null
-  container: HTMLElement | null = null;
   // Step 1: Constructor — pass listeners: ['animationend'], store a unique instance id
   // Step 2: toast(item) — create a DOM element from getToastTemplate(item),
   //   append it to this.listElement,
@@ -36,5 +35,34 @@ export class Toast extends AbstractComponent<object> {
   }
   toHTML() {
     return `<ul aria-live="polite" aria-relevant="additions removals" id="toast-instance-${this.id}"></ul>`
+  }
+
+  getToastItem = (item: TToastItem) => {
+    return `<li class=${css.toast} data-removed='false' id=${item.id} role='status'>
+      <p>${item.text}</p>
+    </li>`
+  }
+
+  onAnimationend({ target }) {
+    if (target instanceof HTMLElement && target.dataset.removed === 'true') {
+      target.remove()
+    }
+  }
+
+  afterRender() {
+    this.listElement = document.getElementById(`toast-instance-${this.id}`)! as HTMLUListElement
+  }
+
+  toast({ id, text }: TToastItem) {
+    const wrapper = document.createElement('div')
+    wrapper.innerHTML = this.getToastItem({ id, text })
+    const element = wrapper.firstElementChild!
+    this.listElement?.appendChild(element)
+    element.classList.add(css.fadeIn)
+    setTimeout(() => {
+      element.classList.remove(css.fadeIn)
+      element.classList.add(css.fadeOut)
+      element.dataset.removed = 'true'
+    }, 3000)
   }
 }
