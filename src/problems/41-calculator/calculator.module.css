@@ -1,1 +1,20 @@
 /* Student solution styles */
+.calculator {
+  display: grid;
+  width: fit-content;
+  grid-template-columns: repeat(4, 100px);
+  grid-auto-rows: 100px;
+  border: 4px solid black;
+}
+
+.calculator output {
+  grid-column: 1/5;
+  border: 1px solid black;
+  background: rgba(0, 0, 0, 0.2);
+  
+  font-size: 3rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1rem;
+}
